@@ -13,6 +13,7 @@ const KrishiConnect = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedPriceDetail, setSelectedPriceDetail] = useState(null);
 
   // Mock data
   const marketPrices = [
@@ -821,11 +822,15 @@ const KrishiConnect = () => {
 
   // Marketplace Component
   const Marketplace = () => {
+    const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const [localFilterLocation, setLocalFilterLocation] = useState('all');
+    const [localFilterCrop, setLocalFilterCrop] = useState('all');
+
     const filteredProducts = products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.farmer.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesLocation = filterLocation === 'all' || product.location.includes(filterLocation);
-      const matchesCrop = filterCrop === 'all' || product.category === filterCrop;
+      const matchesSearch = product.name.toLowerCase().includes(localSearchQuery.toLowerCase()) ||
+                          product.farmer.toLowerCase().includes(localSearchQuery.toLowerCase());
+      const matchesLocation = localFilterLocation === 'all' || product.location.includes(localFilterLocation);
+      const matchesCrop = localFilterCrop === 'all' || product.category === localFilterCrop;
       return matchesSearch && matchesLocation && matchesCrop;
     });
 
@@ -866,16 +871,16 @@ const KrishiConnect = () => {
                   <input
                     type="text"
                     placeholder="Search products, farmers, location..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={localSearchQuery}
+                    onChange={(e) => setLocalSearchQuery(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-600 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
               <div>
                 <select
-                  value={filterLocation}
-                  onChange={(e) => setFilterLocation(e.target.value)}
+                  value={localFilterLocation}
+                  onChange={(e) => setLocalFilterLocation(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-600 focus:outline-none transition-colors"
                 >
                   <option value="all">All Locations</option>
@@ -888,8 +893,8 @@ const KrishiConnect = () => {
               </div>
               <div>
                 <select
-                  value={filterCrop}
-                  onChange={(e) => setFilterCrop(e.target.value)}
+                  value={localFilterCrop}
+                  onChange={(e) => setLocalFilterCrop(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-600 focus:outline-none transition-colors"
                 >
                   <option value="all">All Categories</option>
@@ -1133,7 +1138,7 @@ const KrishiConnect = () => {
                 </div>
               </div>
 
-              <button className="w-full mt-4 bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+              <button className="w-full mt-4 bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all" onClick={() => setSelectedPriceDetail(item)}>
                 View Details
               </button>
             </div>
@@ -1200,6 +1205,131 @@ const KrishiConnect = () => {
             </div>
           </div>
         </div>
+
+        {/* Price Detail Modal */}
+        {selectedPriceDetail && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedPriceDetail(null)}>
+            <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="sticky top-0 bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 flex items-center justify-between rounded-t-3xl">
+                <h2 className="text-2xl font-bold">{selectedPriceDetail.crop} - Detailed Analysis</h2>
+                <button onClick={() => setSelectedPriceDetail(null)} className="text-white hover:bg-white/20 p-2 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Current Price */}
+                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 border-2 border-green-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-700">Current Market Price</h3>
+                      <p className="text-sm text-gray-500">Updated 2 hours ago</p>
+                    </div>
+                    <div className={`flex items-center space-x-2 px-4 py-2 rounded-full ${
+                      selectedPriceDetail.trend === 'up' ? 'bg-green-100 text-green-700' : 
+                      selectedPriceDetail.trend === 'down' ? 'bg-red-100 text-red-700' : 
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      <TrendingUp size={20} className={selectedPriceDetail.trend === 'down' ? 'transform rotate-180' : ''} />
+                      <span className="font-bold">{selectedPriceDetail.trend === 'up' ? '+' : selectedPriceDetail.trend === 'down' ? '-' : ''}{Math.abs(selectedPriceDetail.change)}%</span>
+                    </div>
+                  </div>
+                  <div className="text-5xl font-bold text-gray-900 mb-2">₹{selectedPriceDetail.price}</div>
+                  <div className="text-gray-600">per {selectedPriceDetail.unit.split('/')[1]}</div>
+                </div>
+
+                {/* 7-Day Price History */}
+                <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">7-Day Price History</h3>
+                  <div className="space-y-3">
+                    {[
+                      { day: 'Today', price: selectedPriceDetail.price, change: selectedPriceDetail.change },
+                      { day: 'Yesterday', price: Math.round(selectedPriceDetail.price * 0.98), change: -2.1 },
+                      { day: '2 days ago', price: Math.round(selectedPriceDetail.price * 0.96), change: 1.5 },
+                      { day: '3 days ago', price: Math.round(selectedPriceDetail.price * 0.95), change: -1.2 },
+                      { day: '4 days ago', price: Math.round(selectedPriceDetail.price * 0.94), change: 0.8 },
+                      { day: '5 days ago', price: Math.round(selectedPriceDetail.price * 0.93), change: 2.3 },
+                      { day: '6 days ago', price: Math.round(selectedPriceDetail.price * 0.91), change: -1.5 },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <span className="font-medium text-gray-700">{item.day}</span>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-lg font-bold text-gray-900">₹{item.price}</span>
+                          <span className={`text-sm font-semibold ${item.change > 0 ? 'text-green-600' : item.change < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                            {item.change > 0 ? '↑' : item.change < 0 ? '↓' : '→'} {Math.abs(item.change)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Regional Prices */}
+                <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Regional Price Comparison</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {[
+                      { region: 'Punjab', price: selectedPriceDetail.price, trend: 'high' },
+                      { region: 'Haryana', price: Math.round(selectedPriceDetail.price * 0.97), trend: 'medium' },
+                      { region: 'Uttar Pradesh', price: Math.round(selectedPriceDetail.price * 0.95), trend: 'medium' },
+                      { region: 'Madhya Pradesh', price: Math.round(selectedPriceDetail.price * 0.92), trend: 'low' },
+                      { region: 'Maharashtra', price: Math.round(selectedPriceDetail.price * 0.98), trend: 'high' },
+                      { region: 'Karnataka', price: Math.round(selectedPriceDetail.price * 0.94), trend: 'low' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+                        <div>
+                          <div className="font-semibold text-gray-900">{item.region}</div>
+                          <div className="text-xs text-gray-500">
+                            {item.trend === 'high' ? '🔥 High Demand' : item.trend === 'medium' ? '📊 Average' : '📉 Low Demand'}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-gray-900">₹{item.price}</div>
+                          <div className="text-xs text-gray-500">per quintal</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Market Insights */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border-2 border-blue-200">
+                    <div className="text-3xl mb-3">📈</div>
+                    <h4 className="font-bold text-gray-900 mb-2">Demand Forecast</h4>
+                    <p className="text-sm text-gray-700">
+                      Expected to increase by 8-10% in next 2 weeks due to festive season. Good time to sell!
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border-2 border-green-200">
+                    <div className="text-3xl mb-3">💡</div>
+                    <h4 className="font-bold text-gray-900 mb-2">Seller Tip</h4>
+                    <p className="text-sm text-gray-700">
+                      Current prices are {selectedPriceDetail.change > 0 ? 'favorable' : 'below average'}. Consider {selectedPriceDetail.change > 0 ? 'listing now' : 'waiting 3-5 days'}.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                  <button 
+                    onClick={() => {
+                      setSelectedPriceDetail(null);
+                      setCurrentPage('marketplace');
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-4 rounded-xl font-bold hover:shadow-xl transition-all"
+                  >
+                    Browse {selectedPriceDetail.crop} Listings
+                  </button>
+                  <button className="bg-white text-gray-800 px-6 py-4 rounded-xl font-bold border-2 border-gray-200 hover:border-green-600 hover:shadow-lg transition-all">
+                    Set Price Alert
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
