@@ -7,9 +7,6 @@ const KrishiConnect = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterLocation, setFilterLocation] = useState('all');
-  const [filterCrop, setFilterCrop] = useState('all');
   const [showNotifications, setShowNotifications] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
